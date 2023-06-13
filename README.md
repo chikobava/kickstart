@@ -16,9 +16,8 @@ For the purposes of this tutorial let's assume, you've unpacked your centos7.iso
 * Copy your kickstart file to /tmp/centos/ks/ks.cfg
 * Edit grub
 
-To edit grub for [efiboot](https://bbs.archlinux.org/viewtopic.php?id=240034#:~:text=the%20live%20DVD%3F-,efiboot.,CD%2FDVD%20type%20installation%20medias.), you will need to mount (as writable) the .img file in `/tmp/centos/images/efiboot.img` (considering you've unpacked your iso in /tmp/centos folder).
-Then you will need to edit the EFI/BOOT/grub.cfg and add your options there. You can use the grub.cfg in configuration_files as a reference.
-You can also amend the [isolinux](https://wiki.syslinux.org/wiki/index.php?title=ISOLINUX) file in /tmp/centos/isolinux/isolinux.cfg. Now you can generate your custom ISO. [here] and [here]
+To edit grub for [efiboot](https://bbs.archlinux.org/viewtopic.php?id=240034#:~:text=the%20live%20DVD%3F-,efiboot.,CD%2FDVD%20type%20installation%20medias.), you will need to mount (as writable) the .img file in `/tmp/centos/images/efiboot.img`.<br> Then you will need to edit the EFI/BOOT/grub.cfg and add your options there. You can use the grub.cfg in configuration_files as a reference.
+You can also amend the [isolinux](https://wiki.syslinux.org/wiki/index.php?title=ISOLINUX) file in /tmp/centos/isolinux/isolinux.cfg.
 
 * Change to /tmp/
 Execute the following command:
@@ -56,3 +55,5 @@ Here is breakdown of the command:
 * `-e images/efiboot.img`: Specify the path to the EFI boot image.
 * `-o custom.iso`: Specify the output file name as "custom.iso".
 * `centos/`: The source directory containing the files to be included in the ISO image.
+
+The produced image will be in /tmp/custom.iso
