@@ -1,0 +1,20 @@
+# this command creates your kickstart iso
+mkisofs -U -r -v -T -J -joliet-long \
+    -V "CentOS 7 x86_64" \
+    -volset "CentOS 7 x86_64" \
+    -A "CentOS 7 x86_64" \
+    -b isolinux/isolinux.bin \
+    -c isolinux/boot.cat \
+    -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot \
+    -e images/efiboot.img \
+    -no-emul-boot \
+    -o custom.iso centos/
+
+# add uefi boot to your image
+isohybrid --uefi custom.iso 
+
+# To edit grub, you will need to mount (as writable) the .img file in iso_root/images/efiboot.img
+# then you'll need to go to EFI/BOOT/grub.cfg and add your options there;
+# as reference you can use provided grub.cfg in the current kickstart folder
+# to generate password, use the python 2 one-liner:
+python -c 'import crypt,getpass; print(crypt.crypt(getpass.getpass(), crypt.mksalt(crypt.METHOD_SHA512)))'
