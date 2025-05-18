@@ -1,59 +1,57 @@
-# Kickstart
+# Automated CentOS Stream 10 Installations with Kickstart
+This repository demonstrates how to create a Kickstart-enabled installation ISO using **CentOS Stream 10**. The process is streamlined, faster, and less error-prone than traditional methods (e.g. editing grub.cfg, generating iso with mkisofs), because `mkksiso` directly integrates the Kickstart file into the ISO and automates the boot configuration.
 
-This repository contains a few simple example files to demonstrate how to create a kickstart image using Centos 7.
+**Key Steps:**
 
-Steps to produce a kickstart image:
+1.  Download the CentOS Stream 10 Installation Image.
+2.  Prepare Your Kickstart Configuration File.
+3.  Install `lorax` image builder tool.
+4.  Execute `mkksiso` to generate the custom ISO.
 
-* Download Centos 7 image.
-* Create kickstart file (see ./configuration_files/ks.ssh.cfg for an example).
+## 1. Download the CentOS Stream 10 Installation Image
+To download the CentOS Stream 10 image you can click on the [link](https://mirrormanager.fedoraproject.org/mirrors/CentOS) and choose the mirror closest to you. Then simply pull it with wget.
 
-**Note**: please replace variables enclosed in ${} with corresponding values, see comments in the ks.cfg
-
-* Unpack the Centos 7 image to some folder (for example `/tmp/centos`).
-
-For the purposes of this tutorial let's assume, you've unpacked your centos7.iso into /tmp/centos.
-
-* Copy your kickstart file to /tmp/centos/ks/ks.cfg
-* Edit grub
-
-To edit grub for [efiboot](https://bbs.archlinux.org/viewtopic.php?id=240034#:~:text=the%20live%20DVD%3F-,efiboot.,CD%2FDVD%20type%20installation%20medias.), you will need to mount (as writable) the .img file in `/tmp/centos/images/efiboot.img`.<br> Then you will need to edit the EFI/BOOT/grub.cfg and add your options there. You can use the grub.cfg in configuration_files as a reference.
-You can also amend the [isolinux](https://wiki.syslinux.org/wiki/index.php?title=ISOLINUX) file in /tmp/centos/isolinux/isolinux.cfg.
-
-* Change to /tmp/
-Execute the following command:
-
+**Example:** Downloading the boot ISO from a specific mirror to the `/tmp` directory:
 ```bash
-mkisofs -U -r -v -T -J -joliet-long \
-    -V "CentOS 7 x86_64" \
-    -volset "CentOS 7 x86_64" \
-    -A "CentOS 7 x86_64" \
-    -b isolinux/isolinux.bin \
-    -c isolinux/boot.cat \
-    -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot \
-    -e images/efiboot.img \
-    -no-emul-boot \
-    -o custom.iso centos/
+wget https://ftp-chi.osuosl.org/pub/centos-stream/10-stream/BaseOS/x86_64/iso/CentOS-Stream-10-20250512.0-x86_64-boot.iso -O /tmp/centos.iso
 ```
 
-Here is breakdown of the command:
+## 2. Create kickstart file
+The Kickstart file (`ks.cfg`) contains all the instructions for the automated installation process, including partitioning, user account setup, package selection, and system configuration. You have two primary ways to create this file:
 
-* `-U`: Generate a 32-bit UFS filesystem.
-* `-r`: Use Rock Ridge extensions to support long filenames and POSIX permissions.
-* `-v`: Verbose mode, which displays detailed output during the creation process.
-* `-T`: Translates file names to uppercase.
-* `-J`: Generate Joliet directory records for Windows compatibility.
-* `-joliet-long`: Enable Joliet long file name support.
-* `-V "CentOS 7 x86_64"`: Specify the volume ID of the ISO image.
-* `-volset "CentOS 7 x86_64"`: Set the volume set ID of the ISO image.
-* `-A "CentOS 7 x86_64"`: Set the application ID of the ISO image.
-* `-b isolinux/isolinux.bin`: Specify the path to the boot image.
-* `-c isolinux/boot.cat`: Specify the path to the boot catalog.
-* `-no-emul-boot`: Disable emulation of boot image.
-* `-boot-load-size 4`: Specify the boot image load segment size.
-* `-boot-info-table`: Generate boot information table.
-* `-eltorito-alt-boot`: Specify an alternative boot image.
-* `-e images/efiboot.img`: Specify the path to the EFI boot image.
-* `-o custom.iso`: Specify the output file name as "custom.iso".
-* `centos/`: The source directory containing the files to be included in the ISO image.
+  * **Generate from an Installed System:** Install a temporary CentOS Stream 10 virtual machine or physical system, configuring all the desired options (disk partitioning, user accounts, timezone, etc.) during the interactive installation. After the installation is complete, the configuration will be saved in the `/root/anaconda-ks.cfg` file. You can then copy this file to your working directory and modify it as needed. If you choose this method, do not forget to replace `graphical` installation mode with `text`, this small change will significantly increase the installation speed.
 
-The produced image will be in /tmp/custom.iso
+  * **Use a Pre-existing Template:** This repository includes a basic Kickstart configuration file (`ks/ks.cfg`). This template provides a starting point with configurations for enhanced `sshd` security. You can copy your public SSH key and set passwords for the `root` and an `admin` user. Copy this file to `/tmp/ks.cfg` and carefully review and customize it to match your specific requirements.
+
+**Note:** Remember to edit `ks.cfg` and replace placeholder values with your actual desired settings, as indicated by the comments within the file.
+
+You can validate your ks file using ksvalidator:
+```bash
+dnf install pykickstart
+ksvalidator -v RHEL10 ks.cfg
+```
+
+## 3. Install the `lorax` image builder
+`lorax` is a powerful utility used to generate bootable installation images and media for Linux distributions. We will leverage it to create a customized ISO image incorporating your Kickstart file.
+
+To install `lorax` on a RPM-based system (including CentOS Stream):
+```bash
+sudo dnf install lorax
+```
+
+## 4. Execute `mkksiso` to Generate the Custom ISO
+The final step involves using the `mkksiso` command, which is part of the `lorax` suite, to combine your Kickstart file with the original CentOS Stream 10 ISO image, creating a new, bootable ISO that will automatically initiate the installation using your preconfigured settings.
+
+The general syntax for `mkksiso` is:
+```bash
+mkksiso --ks /PATH/TO/KICKSTART /PATH/TO/ISO /PATH/TO/NEW-ISO
+```
+Based on the file paths we've used in the previous steps:
+```bash
+mkksiso --ks /tmp/ks.cfg /tmp/centos.iso /tmp/custom.iso
+```
+After executing this command, `mkksiso` will process the files and generate your custom ISO image (`/tmp/custom.iso`). This process might take a few moments depending on your system's resources and the size of the base image.
+
+Once the process is complete, you can use the `custom.iso` file to perform automated installations of CentOS Stream 10 on your servers or virtual machines. Simply boot from this ISO, and the installation will proceed unattended according to the specifications in your Kickstart file.
+
+Happy automated kickstarting!
